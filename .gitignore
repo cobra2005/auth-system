@@ -1,0 +1,32 @@
+# File .gitignore mẫu cho dự án Node.js của bạn
+
+# Thư mục dependencies
+node_modules/
+
+# File environment
+.env
+.env.*
+!.env.example
+
+# File log
+*.log
+logs/
+
+# File hệ thống
+.DS_Store
+.idea/
+.vscode/
+
+# File npm
+package-lock.json
+npm-debug.log*
+
+# Thư mục cache
+.cache/
+
+# File coverage (nếu dùng testing)
+coverage/
+
+# File biên dịch (nếu có)
+dist/
+build/
