@@ -1,12 +1,11 @@
 import { matchedData, validationResult } from "express-validator";
 import User from "../models/User.mjs";
 import { users } from "../data/users.mjs";
-import { hashPassword } from "../utils/hash.mjs";
-import bcrypt from "bcryptjs";
+import { hashPassword, comparePassword } from "../utils/hash.mjs";
 
 const profiles = async (req, res) => {
     try {
-        const users = await User.find({}, { passwordHash: 0 }); // Loại bỏ passwordHash
+        const users = await User.find({}, { passwordHash: 0 }); // Remove passwordHash
         res.status(200).send(users);
     } catch (error) {
         res.status(500).json({ error: 'Failed to get users' });
@@ -52,35 +51,47 @@ const register = async (req, res) => {
     const userResponse = savedUser.toObject();
     delete userResponse.passwordHash;
 
-    res.status(201).json(userResponse);
+    res.status(201).send({
+        msg: 'Register successful',
+        user: userResponse
+    });
 
 }
 
-const login = (req, res) => {
+const login = async (req, res) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {
         return res.status(400).send({ errors: result.array() });
     }
-    const data = matchedData(req);
-    const findUser = users.find(user => user.email === data.email && user.role === data.role);
-    if (!findUser) {
-        return res.status(404).send('Cannot find the user!');
-    }
-    bcrypt.compare(data.password, findUser.passwordHash, (err, result) => {
-        if (err) {
-            return res.status(500).send({
-                msg: 'Internal server error!',
-                errors: err
-            });
+    try {
+        const data = matchedData(req);
+        const { email, password, role } = data;
+
+        // Find user in db
+        const user = await User.findOne({ email, role });
+        if (!user) {
+            return res.status(404).send({ error: 'User not found!' });
         }
-        if (!result) {
-            return res.status(401).send("Invalid password");
+
+        // Compare password
+        const isMatched = await comparePassword(password, user.passwordHash);
+        if (!isMatched) {
+            return res.status(401).send({ error: 'Password is incorrect!' });
         }
-        res.status(200).send({
+
+        // Create a user object without passwordHash to return
+        const userResponse = user.toObject();
+        delete userResponse.passwordHash;
+        
+        res.status(200).send({ 
             msg: 'Login successful',
-            data: findUser
+            user: userResponse
         });
-    });
+
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Login failed' });
+    }
 }
 
 export default {
