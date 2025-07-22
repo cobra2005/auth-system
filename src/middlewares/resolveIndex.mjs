@@ -1,6 +1,6 @@
 import { users } from "../data/users.mjs";
 
-export default function resolveIndexByUserId(req, res, next) {
+export function resolveIndexByUserId(req, res, next) {
     const {
         params: { id },
     } = req; 
