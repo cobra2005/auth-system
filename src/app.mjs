@@ -1,10 +1,12 @@
 import express from 'express';
-import authRouter from './routes/auth.mjs';
 import 'dotenv/config';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import connectDB from './config/db.mjs';
+import routes from './routes/index.mjs';
+import notFoundHandler from './middlewares/errors/notFoundHandler.mjs';
+import globalErrorHandler from './middlewares/errors/globalErrorHandler.mjs';
 
 const app = express();
 
@@ -17,14 +19,19 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET,
+  saveUninitialized: false,
   resave: false,
-  saveUninitialized: false
+  cookie: {
+    maxAge: 60000 * 60,
+  }
 }));
 
 // Database connection
 connectDB();
 
-app.use(authRouter);
+app.use(routes);
+app.use(notFoundHandler);
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 3000;
 
