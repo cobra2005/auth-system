@@ -1,10 +1,10 @@
 import { matchedData, validationResult } from "express-validator";
 import User from "../models/User.mjs";
-import { hashPassword, comparePassword } from "../utils/hash.mjs";
+import { hashPassword } from "../utils/hash.mjs";
 
 const profile = async (req, res) => {
     try {
-        const { _id: id } = req.session.user;
+        const { _id: id } = req.user;
         if (!id) {
             return res.status(400).send({
                 success: false,
@@ -112,82 +112,32 @@ const register = async (req, res) => {
     }
 }
 
-const login = async (req, res) => {
+const login = (req, res) => {
     try {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            return res.status(400).send({
-                success: false,
-                message: 'Validation error',
-                error: {
-                    statusCode: 400,
-                    details: result.array(),
-                }
-            })
-        }
-        const data = matchedData(req);
-        const { email, password, role } = data;
-
-        // Find user in db
-        const user = await User.findOne({ email, role });
-        if (!user) {
-            return res.status(404).send({
-                success: false,
-                message: "User not found",
-                error: {
-                    statusCode: 404,
-                    details: ["User not found"],
-                }
-            });
-        }
-
-        // Compare password
-        const isMatched = await comparePassword(password, user.passwordHash);
-        if (!isMatched) {
-            return res.status(401).send({
-                success: false,
-                message: "Password is incorrect",
-                error: {
-                    statusCode: 404,
-                    details: ["Password is incorrect"],
-                }
-            });
-        }
-
-
-        // Create a user object without passwordHash to return
-        const userResponse = user.toObject();
-
-        req.session.user = userResponse;
-        delete userResponse.passwordHash;
-
         res.status(200).send({
             success: true,
-            message: 'Login successful',
-            data: {
+            message: 'Login successfully',
+            error: {
                 statusCode: 200,
-                user: userResponse
+                details: ['Login successfully']
             }
         });
-
     } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).send({
+        if (err) return res.status(400).send({
             success: false,
-            message: 'Login failed',
+            message: 'Login failure',
             error: {
-                statusCode: 500,
-                details: ['Login failed']
+                statusCode: 400,
+                details: ['Login failure']
             }
-        })
+        });
     }
 }
 
 const deleteUser = async (req, res) => {
     try {
-        console.log(req.session.user);
         const { id } = req.params;
-        const { _id: userId, role } = req.session.user;
+        const { _id: userId, role } = req.user;
 
         if (userId !== id && role !== 'admin') {
             return res.status(403).send({
@@ -241,21 +191,25 @@ const deleteUser = async (req, res) => {
 }
 
 const logout = (req, res) => {
-    req.session.user = null;
-
-    req.session.save((err) => {
-        if (err) {
-            console.error('Error when save session:', err);
-            return res.status(500).send({
-                success: false,
-                message: 'Error when logout',
-                error: {
-                    statusCode: 500,
-                    details: ['Error when logout', 'Error when save session', err]
-                }
-            })
-        }
-
+    if (!req.user) {
+        return res.status(400).send({
+            success: false,
+            message: 'Missing or invalid user',
+            error: {
+                statusCode: 400,
+                details: ["Missing or invalid user"]
+            }
+        });
+    }
+    req.logout((err) => {
+        if (err) return res.status(400).send({
+            success: false,
+            message: 'Logout failure',
+            data: {
+                statusCode: 400,
+                details: ['Logout failure'],
+            }
+        })
         res.status(200).send({
             success: true,
             message: 'Logout successfully',
@@ -264,7 +218,8 @@ const logout = (req, res) => {
                 details: ['Logout successfully'],
             }
         })
-    });
+    })
+
 
 }
 

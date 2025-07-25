@@ -2,7 +2,7 @@ import User from "../models/User.mjs";
 
 const users = async (req, res) => {
     try {
-        const { role } = req.session.user;
+        const { role } = req.user;
         if(role !== 'admin') {
             return res.status(401).send({
                 success: false,
@@ -36,7 +36,7 @@ const users = async (req, res) => {
 
 const dashboard = async (req, res) => {
     try {
-        const { role } = req.session.user;
+        const { role } = req.user;
         if(role !== 'admin') {
             return res.status(401).send({
                 success: false,

@@ -3,10 +3,12 @@ import 'dotenv/config';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import passport from 'passport';
 import connectDB from './config/db.mjs';
 import routes from './routes/index.mjs';
 import notFoundHandler from './middlewares/errors/notFoundHandler.mjs';
 import globalErrorHandler from './middlewares/errors/globalErrorHandler.mjs';
+import './strategies/localStrategy.mjs';
 
 const app = express();
 
@@ -26,6 +28,9 @@ app.use(session({
   }
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Database connection
 connectDB();
 
@@ -37,4 +42,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`Running on port ${PORT}`);
-})
+});
