@@ -1,6 +1,7 @@
 import { matchedData, validationResult } from "express-validator";
 import User from "../models/User.mjs";
 import { hashPassword } from "../utils/hash.mjs";
+import '../strategies/localStrategy.mjs';
 
 const profile = async (req, res) => {
     try {
@@ -114,6 +115,17 @@ const register = async (req, res) => {
 
 const login = (req, res) => {
     try {
+        const result = validationResult(req);
+        if (!result.isEmpty()) {
+            return res.status(400).send({
+                success: false,
+                message: 'Validation error',
+                error: {
+                    statusCode: 400,
+                    details: result.array(),
+                }
+            })
+        }
         res.status(200).send({
             success: true,
             message: 'Login successfully',

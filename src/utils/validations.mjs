@@ -4,7 +4,7 @@ export const loginValidation = [
     body('username')
         .notEmpty()
         .withMessage('username must not be empty!')
-        .isEmail()
+        .isString()
         .withMessage('username must be a string!'),
     body('password')
         .notEmpty()
